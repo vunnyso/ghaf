@@ -15,7 +15,7 @@ in
       # Use less privileged ghaf user
       users.users.ghaf = {
         isNormalUser = true;
-        extraGroups = ["wheel" "networkmanager" "video"];
+        extraGroups = ["wheel" "networkmanager" "video" "plugdev"];
         # Allow the graphical user to login without password
         initialHashedPassword = "";
       };

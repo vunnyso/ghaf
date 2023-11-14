@@ -18,4 +18,8 @@
   ./version
   ./virtualization/docker.nix
   ./windows-launcher
+  ./host/yubikey.nix
+  {
+    ghaf.host.passwordless_authentication.enable = true;
+  }
 ]

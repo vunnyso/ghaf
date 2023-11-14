@@ -87,6 +87,10 @@
           # Lenovo X1 AC adapter
           "-device"
           "acad"
+          # Add Yubico Yubikey device to guest
+          "-usb"
+          "-device"
+          "usb-host,vendorid=0x1050,productid=0x0407"
         ];
         microvm.devices = [
           {
@@ -154,6 +158,8 @@
               SUBSYSTEM=="input",ATTRS{name}=="TPPS/2 Elan TrackPoint",GROUP="kvm"
               # Lenovo X1 integrated webcam
               SUBSYSTEM=="usb", ATTR{idVendor}=="04f2", ATTR{idProduct}=="b751", GROUP="kvm"
+              # YubiKey for two-factor and passwordless authentication
+              SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1050", ATTRS{idProduct}=="0407", KERNEL=="hidraw*", TAG+="uaccess", GROUP="plugdev", MODE="0666"
             '';
 
             time.timeZone = "Asia/Dubai";
@@ -169,7 +175,7 @@
 
             # Allow microvm user to access pulseaudio
             hardware.pulseaudio.extraConfig = "load-module module-combine-sink module-native-protocol-unix auth-anonymous=1";
-            users.extraUsers.microvm.extraGroups = ["audio" "pulse-access"];
+            users.extraUsers.microvm.extraGroups = ["audio" "pulse-access" "plugdev"];
 
             ghaf = {
               host.kernel_hardening.enable = false;
@@ -200,7 +206,7 @@
                         # Enable pulseaudio for user ghaf
                         sound.enable = true;
                         hardware.pulseaudio.enable = true;
-                        users.extraUsers.ghaf.extraGroups = ["audio"];
+                        users.extraUsers.ghaf.extraGroups = ["audio" "plugdev"];
                         nixpkgs.config.pulseaudio = true;
 
                         microvm.qemu.extraArgs = [
@@ -217,6 +223,10 @@
                           "intel-hda"
                           "-device"
                           "hda-duplex,audiodev=pa1"
+                          # Add Yubico Yubikey device to guest
+                          "-usb"
+                          "-device"
+                          "u2f-passthru,vendorid=0x1050,productid=0x0407"
                         ];
                         microvm.devices = [];
                       }
@@ -310,6 +320,11 @@
     ../modules/host/secureboot.nix
     {
       ghaf.host.secureboot.enable = false;
+    }
+    # We can set it to true, if no Yubico hardware connected it works in usual way
+    ../modules/host/yubikey.nix
+    {
+      ghaf.host.passwordless_authentication.enable = true;
     }
   ];
   releaseModules = [
