@@ -504,22 +504,18 @@ All graphics and display output related components and dependencies, including k
     SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 <h1 id="hardening"><a class="header" href="#hardening">Hardening</a></h1>
-<p>This section describes how securing Ghaf by reducing its' attack surface, in short - hardening, is done.</p>
+<p>This section describes how securing Ghaf by reducing its attack surface—hardening—is done.</p>
 <h2 id="kernel"><a class="header" href="#kernel">Kernel</a></h2>
-<p>Ghaf has two types of kernels - host and guest kernels. Hardening of these kernels varies in terms of hardware support and functionality required by the guest kernel in question. Within this context, kernel always refers to Linux operating system kernel.</p>
-<h3 id="process-of-kernel-hardening"><a class="header" href="#process-of-kernel-hardening">Process of Kernel Hardening</a></h3>
-<p>NixOS provides several mechanisms to customize kernel. The main methods are:</p>
+<p>Ghaf has two types of kernels: host and guest. Hardening of these kernels varies in terms of hardware support and functionality required by the guest kernel in question. Within this context, the kernel always refers to the Linux operating system kernel.</p>
+<h3 id="kernel-hardening-process"><a class="header" href="#kernel-hardening-process">Kernel Hardening Process</a></h3>
+<p>NixOS provides several mechanisms to customize the kernel. The main methods are:</p>
 <ul>
-<li><a href="https://nixos.wiki/wiki/Linux_kernel#Custom_kernel_commandline">declaring kernel command line parameters</a>
-<ul>
-<li><a href="https://github.com/search?q=repo%3Atiiuae%2Fghaf%20kernelparams&amp;type=code">Usage in Ghaf</a></li>
-</ul>
+<li>
+<p><a href="https://nixos.wiki/wiki/Linux_kernel#Custom_kernel_commandline">Declaring kernel command line parameters</a>: <a href="https://github.com/search?q=repo%3Atiiuae%2Fghaf%20kernelparams&amp;type=code">usage in Ghaf</a>.</p>
 </li>
-<li><a href="https://nixos.org/manual/nixos/stable/#sec-linux-config-customizing">declaring kernel custom configuration</a>
-<ul>
-<li><a href="https://github.com/tiiuae/ghaf/blob/main/modules/host/kernel.nix">Usage in Ghaf</a></li>
-<li>Example of entering the kernel development shell to customize the <code>.config</code> and build it:</li>
-</ul>
+<li>
+<p><a href="https://nixos.org/manual/nixos/stable/#sec-linux-config-customizing">Declaring kernel custom configuration</a>: <a href="https://github.com/tiiuae/ghaf/blob/main/modules/host/kernel.nix">usage in Ghaf</a>.</p>
+<p>Example of entering the kernel development shell to customize the <code>.config</code> and build it:</p>
 <pre><code>~/ghaf $ nix develop .#devShells.x86_64-linux.kernel-x86
 ...
 [ghaf-kernel-devshell:~/ghaf/linux-6.6.2]$ cp ../modules/host/ghaf_host_hardened_baseline .config
@@ -530,11 +526,13 @@ All graphics and display output related components and dependencies, including k
 Kernel: arch/x86/boot/bzImage
 </code></pre>
 </li>
-<li>Boot the built kernel with QEMU
+<li>
+<p>Booting the built kernel with QEMU:</p>
 <pre><code>[ghaf-kernel-devshell:~/ghaf/linux-6.6.2]$ qemu-system-x86_64 -kernel arch/x86/boot/bzImage
 </code></pre>
 </li>
-<li><a href="https://github.com/a13xp0p0v/kernel-hardening-checker">validating with kernel hardening checker</a>
+<li>
+<p><a href="https://github.com/a13xp0p0v/kernel-hardening-checker">Validating with kernel hardening checker</a>:</p>
 <pre><code>[ghaf-kernel-devshell:~/ghaf/linux-6.6.2]$ kernel-hardening-checker -c ../modules/host/ghaf_host_hardened_baseline
 [+] Kconfig file to check: ../modules/host/ghaf_host_hardened_baseline
 [+] Detected microarchitecture: X86_64
@@ -545,13 +543,11 @@ Kernel: arch/x86/boot/bzImage
 </code></pre>
 </li>
 </ul>
-<h3 id="host-kernel"><a class="header" href="#host-kernel">Host kernel</a></h3>
-<p>The host kernel runs on bare metal. The kernel is provided either via Linux upstream (<code>x86_64</code>) or via vendor board support package (BSP). The default Ghaf host kernel on <code>x86_64</code> is maintained by Ghaf upstream package sources - <code>nixpkgs</code> or nix-packaged hardware-specific BSP (e.g. NVIDIA Jetson-family of devices).</p>
+<h3 id="host-kernel"><a class="header" href="#host-kernel">Host Kernel</a></h3>
+<p>The host kernel runs on bare metal. The kernel is provided either with Linux upstream (<code>x86_64</code>) or with vendor BSP. The default Ghaf host kernel on <code>x86_64</code> is maintained by Ghaf upstream package sources <code>nixpkgs</code> or Nix-packaged hardware-specific BSP (for example, NVIDIA Jetson-family of devices).</p>
 <h4 id="x86-64-linux"><a class="header" href="#x86-64-linux"><code>x86-64-linux</code></a></h4>
-<p>The host kernel hardening is based on Linux <code>make tinyconfig</code>. The default <code>tinyconfig</code> fails to assertions on NixOS without
-modifications. Assertions are fixed in <code>ghaf_host_hardened_baseline</code> linux config under Ghaf <code>modules/host/</code>.
-In addition, NixOS (Ghaf baseline dependency) requires several kernel modules that are added to the config or ignored with <code>allowMissing = true</code>;
-As of now, the kernel builds and early boots on Lenovo X1.</p>
+<p>The host kernel hardening is based on Linux <code>make tinyconfig</code>. The default <code>tinyconfig</code> fails to assertions on NixOS without modifications. Assertions are fixed in <code>ghaf_host_hardened_baseline</code> Linux configuration under Ghaf <code>modules/host/</code>.</p>
+<p>In addition, NixOS (Ghaf baseline dependency) requires several kernel modules that are added to the config or ignored with <code>allowMissing = true</code>. As of now, the kernel builds and early boots on Lenovo X1.</p>
 <div style="break-before: page; page-break-before: always;"></div><!--
     Copyright 2022-2023 TII (SSRC) and the Ghaf contributors
     SPDX-License-Identifier: CC-BY-SA-4.0
@@ -1968,13 +1964,15 @@ irtio-pmem-pci,memdev=mem1,id=nv1'
 <h2 id="environment-requirements"><a class="header" href="#environment-requirements">Environment Requirements</a></h2>
 <p>There are no specific requirements for the environment with this release.</p>
 <h2 id="installation-instructions"><a class="header" href="#installation-instructions">Installation Instructions</a></h2>
-<p>Released images are available at Jfrog Artifactory. To download the release image:</p>
-<ul>
-<li>In the <a href="https://artifactory.ssrcdevops.tii.ae/ui/login/">Jfrog Artifactory</a> login screen, use the <em>Sign in with SAML SSO</em> option and then <em>Sign in with Github.com account</em>. Note that domain restrictions are in place.</li>
-<li>Navigate to the ghaf-23.09 directory: <a href="https://artifactory.ssrcdevops.tii.ae/artifactory/tc/releases/ghaf-23.06/">https://artifactory.ssrcdevops.tii.ae/artifactory/tc/releases/ghaf-23.06/</a></li>
-<li>Download the image from the <code>../targetHW/image</code> directory.</li>
-</ul>
-<div style="break-before: page; page-break-before: always;"></div><!--
+<p>Released images are available at <a href="https://vedenemo.dev/files/releases/ghaf_23.09/">vedenemo.dev/files/releases/ghaf_23.09/</a>.</p>
+<p>Download the required image and use the following instructions:</p>
+<div class="table-wrapper"><table><thead><tr><th>Release Image</th><th>Build and Run</th></tr></thead><tbody>
+<tr><td>ghaf-23.09_Generic_x86.tar.xz</td><td><a href="release_notes/../ref_impl/build_and_run.html#running-ghaf-image-for-x86-computer">Running Ghaf Image for x86 Computer</a></td></tr>
+<tr><td>ghaf-23.09_Lenovo_X1_Gen11.tar.xz</td><td><a href="release_notes/../ref_impl/build_and_run.html#running-ghaf-image-for-lenovo-x1">Running Ghaf Image for Lenovo X1</a></td></tr>
+<tr><td>ghaf-23.09_Nvidia_Orin_AGX.tar.xz, ghaf-23.09_Nvidia_Orin_NX.tar.xz</td><td><a href="release_notes/../ref_impl/build_and_run.html#ghaf-image-for-nvidia-jetson-orin-agx">Ghaf Image for NVIDIA Jetson Orin AGX</a></td></tr>
+<tr><td>ghaf-23.09_PolarFire_RISC-V.tar.xz</td><td><a href="release_notes/../ref_impl/build_and_run.html#building-ghaf-image-for-microchip-icicle-kit">Building Ghaf Image for Microchip Icicle Kit</a></td></tr>
+</tbody></table>
+</div><div style="break-before: page; page-break-before: always;"></div><!--
     Copyright 2022-2023 TII (SSRC) and the Ghaf contributors
     SPDX-License-Identifier: CC-BY-SA-4.0
 -->
@@ -2141,7 +2139,7 @@ windows-launcher ./Windows11_InsiderPreview_Client_ARM64_en-us_25324.VHDX
 <li>For an ISO image, the script creates an empty QCOW2 image in the same directory which is used as a system disk in the VM.</li>
 <li>After installing Windows 11, run the script for the QCOW2 image.</li>
 </ul>
-<p>Do the folowing:</p>
+<p>Do the following:</p>
 <ol>
 <li>
 <p>In the Weston terminal, go to the directory with the Windows 11 image and run the VM without sudo and as a non-root user using the following Ghaf script:</p>
