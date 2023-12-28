@@ -16,6 +16,7 @@
     ../../overlays/custom-packages
 
     ./kernel.nix
+    ./virtualization.nix
 
     # TODO: Refactor this under virtualization/microvm/host/networking.nix
     ./networking.nix

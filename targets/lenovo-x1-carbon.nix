@@ -209,6 +209,8 @@
 
               host.hypervisor_hardening.enable = false;
 
+              host.virtualization_hardening.enable = true;
+
               hardware.x86_64.common.enable = true;
 
               virtualization.microvm-host.enable = true;

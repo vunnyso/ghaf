@@ -6,6 +6,7 @@
   pkgs,
   ...
 }: let
+  #virt_patch = import ./virtualization.nix;
   baseKernel =
     if hyp_cfg.enable
     then
@@ -21,7 +22,7 @@
       }
     else pkgs.linux_latest;
   hardened_kernel = pkgs.linuxManualConfig rec {
-    inherit (baseKernel) src modDirVersion kernelPatches;
+    inherit (baseKernel) src modDirVersion;
     version = "${baseKernel.version}-ghaf-hardened";
     /*
     baseline "make tinyconfig"
@@ -70,12 +71,29 @@
 
     configfile = ./ghaf_host_hardened_baseline;
     allowImportFromDerivation = true;
+    # Experiment 2
+    #Based on https://github.com/NixOS/nixpkgs/blob/master/pkgs/os-specific/linux/kernel/manual-config.nix#L32
+    kernelPatches = [
+      {
+        name = "enable-virt";
+        patch = null;
+        extraConfig = ''
+          HIGH_RES_TIMERS y
+          POSIX_TIMERS  y
+          PRINTK  y
+          BASE_FULL y
+          IKCONFIG y;
+          IKCONFIG_PROC  y;
+        '';
+      }
+    ];
   };
 
   pkvm_patch = lib.mkIf config.ghaf.hardware.x86_64.common.enable [
     {
       name = "pkvm-patch";
-      patch = ../virtualization/pkvm/0001-pkvm-enable-pkvm-on-intel-x86-6.1-lts.patch;
+    #  patch = ../virtualization/pkvm/0001-pkvm-enable-pkvm-on-intel-x86-6.1-lts.patch;
+        patch = null;
       structuredExtraConfig = with lib.kernel; {
         KVM_INTEL = yes;
         KSM = no;
@@ -90,6 +108,23 @@
 
   kern_cfg = config.ghaf.host.kernel_hardening;
   hyp_cfg = config.ghaf.host.hypervisor_hardening;
+
+  overlay1 = _final: prev: {
+    makeModulesClosure = x:
+      prev.makeModulesClosure (x // {allowMissing = true;});
+  };
+  overlay2 = _final: prev: {
+    hardened_kernel = prev.hardened_kernel.extend (lib.const (kprev: {
+      kernel = kprev.kernel.override {
+        extraConfig = ''
+          I2C y
+        '';
+      };
+    }));
+  };
+# below statement also not working
+ hardened_kernel.boot.kernelPatches = pkvm_patch;
+
 in
   with lib; {
     options.ghaf.host.kernel_hardening = {
@@ -100,15 +135,14 @@ in
       enable = mkEnableOption "Hypervisor hardening";
     };
 
+
+
     config = mkIf kern_cfg.enable {
       boot.kernelPackages = pkgs.linuxPackagesFor hardened_kernel;
       boot.kernelPatches = mkIf (hyp_cfg.enable && "${baseKernel.version}" == "6.1.55") pkvm_patch;
+      
       # https://github.com/NixOS/nixpkgs/issues/109280#issuecomment-973636212
-      nixpkgs.overlays = [
-        (_final: prev: {
-          makeModulesClosure = x:
-            prev.makeModulesClosure (x // {allowMissing = true;});
-        })
-      ];
+      # Experiment 3, creating one more overlay source < https://discourse.nixos.org/t/the-correct-way-to-override-the-latest-kernel-config/533 >
+      nixpkgs.overlays = [overlay1];
     };
   }
