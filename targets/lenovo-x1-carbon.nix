@@ -195,6 +195,9 @@
 
             time.timeZone = "Asia/Dubai";
 
+            # Removing all nixbld user accounts
+            nix.nrBuildUsers = 0;
+
             # Enable pulseaudio support for host as a service
             sound.enable = true;
             hardware.pulseaudio.enable = true;
