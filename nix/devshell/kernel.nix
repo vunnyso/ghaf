@@ -44,7 +44,7 @@
           export PS1="[ghaf-kernel-${platform}-devshell:\w]$ "
         '';
         # use "eval $checkPhase" - see https://discourse.nixos.org/t/nix-develop-and-checkphase/25707
-        checkPhase = "cp ../modules/host/ghaf_host_hardened_baseline-${platform} ./.config && make -j$(nproc)";
+        checkPhase = "cp ../modules/hardware/x86_64-generic/kernel/configs/ghaf_host_hardened_baseline-${platform} ./.config && make -j$(nproc)";
       };
   in {
     devShells.kernel-x86 = mkKernelShell {
