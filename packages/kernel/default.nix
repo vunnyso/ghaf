@@ -7,6 +7,7 @@
 }: {
   kernelPatches ? [],
   config_baseline,
+  host_build ? false,
 }: let
   kernel_package = pkgs.linux_latest;
   version = "${kernel_package.version}-ghaf-hardened";
@@ -63,8 +64,8 @@
     ++ lib.optionals config.ghaf.host.kernel.usb_hardening.enable ["${generic_host_configs}/usb.config"]
     ++ lib.optionals config.ghaf.host.kernel.inputdevices_hardening.enable ["${generic_host_configs}/user-input-devices.config"]
     ++ lib.optionals config.ghaf.host.kernel.debug_hardening.enable ["${generic_host_configs}/debug.config"]
-    ++ lib.optionals config.ghaf.guest.hardening.enable ["${generic_guest_configs}/guest.config"]
-    ++ lib.optionals config.ghaf.guest.graphics_hardening.enable ["${generic_guest_configs}/display-gpu.config"];
+    ++ lib.optionals (config.ghaf.guest.hardening.enable && !host_build) ["${generic_guest_configs}/guest.config"]
+    ++ lib.optionals (config.ghaf.guest.graphics_hardening.enable && !host_build) ["${generic_guest_configs}/display-gpu.config"];
 
   kernel =
     if lib.length kernel_features > 0
