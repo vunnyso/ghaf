@@ -93,6 +93,9 @@
                   configH = config;
                 };
               };
+              virtualization.microvm.logvm = {
+                enable = true;
+              };
               virtualization.microvm.guivm = {
                 enable = true;
                 extraModules =
