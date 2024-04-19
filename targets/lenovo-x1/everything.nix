@@ -35,6 +35,8 @@
 
           self.nixosModules.disko-lenovo-x1-basic-v1
 
+          ../../modules/common/log/journal-remote-upload.nix
+
           ./sshkeys.nix
           ({
             pkgs,
