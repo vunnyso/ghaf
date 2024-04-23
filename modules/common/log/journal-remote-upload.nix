@@ -9,6 +9,7 @@ in {
 
   systemd.services.systemd-journal-upload = {
     enable = true;
+    after = ["systemd-journal-remote.service"];
     serviceConfig = {
       #ExecStart = "${pkgs.systemd}/lib/systemd/systemd-journal-upload --save-state -u http://${log-vm-ip-port}";
       ExecStart = "${pkgs.systemd}/lib/systemd/systemd-journal-upload -u http://${log-vm-ip-port}";
