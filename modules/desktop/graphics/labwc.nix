@@ -20,7 +20,7 @@ in
       };
       duration = lib.mkOption {
         type = lib.types.int;
-        default = 300;
+        default = 60;
         description = "Timeout for screen autolock in seconds.";
       };
     };

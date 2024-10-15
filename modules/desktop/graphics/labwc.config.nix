@@ -32,7 +32,7 @@ let
       border: 1px solid rgba(223, 92, 55, 1);
     }
   '';
-  lockCmd = "${pkgs.gtklock}/bin/gtklock -s ${gtklockStyle}";
+  lockCmd = "${pkgs.gtklock}/bin/gtklock --daemonize -s ${gtklockStyle}";
 
   ghaf-launcher = pkgs.callPackage ./ghaf-launcher.nix { inherit config pkgs; };
   autostart = pkgs.writeShellApplication {
@@ -89,7 +89,7 @@ let
     <keyboard>
       <default />
       <keybind key="W-l">
-        <action name="Execute" command="${lockCmd}" />
+        <action name="Execute" command="${pkgs.systemd}/bin/systemctl kill autolock.service --user --signal USR1 --kill-who=main" />
       </keybind>
       ${lib.optionalString config.ghaf.profiles.debug.enable ''
         <keybind key="Print">
@@ -279,7 +279,7 @@ in
         serviceConfig = {
           Type = "simple";
           ExecStart = ''
-            ${pkgs.swayidle}/bin/swayidle -w timeout ${builtins.toString cfg.autolock.duration} \
+            ${pkgs.swayidle}/bin/swayidle -d -w timeout ${builtins.toString cfg.autolock.duration} \
             '${pkgs.chayang}/bin/chayang && ${lockCmd}'
           '';
         };
