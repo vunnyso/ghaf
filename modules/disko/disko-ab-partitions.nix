@@ -45,6 +45,9 @@
       initrd.availableKernelModules = [ "zfs" ];
       supportedFilesystems = [ "zfs" ];
       zfs.extraPools = [ "zfs_data" ];
+      initrd.luks.devices.zfs_data = {
+        device = "/dev/disk/by-partlabel/disk-disk1-zfs_data";
+      };
     };
     disko = {
       # 8GB is the recommeneded minimum for ZFS, so we are using this for VMs to avoid `cp` oom errors.
@@ -102,14 +105,8 @@
               zfs_data = {
                 size = "100%";
                 content = {
-                  name = "zfs_data";
-                  type = "luks";
-                  # TODO: Have a better password mechanism later
-                  settings.keyFile = "${pkgs.writeText "password" "ghaf"}";
-                  content = {
-                    type = "zfs";
-                    pool = "zfs_data";
-                  };
+                  type = "zfs";
+                  pool = "zfs_data";
                 };
               };
             };
