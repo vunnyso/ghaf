@@ -82,13 +82,21 @@
                 };
               };
               swap = {
-                size = "38G";
+                size = "18G";
                 type = "8200";
                 content = {
                   type = "swap";
                   resumeDevice = true; # resume from hiberation from this device
                   # TODO: remove when LUKS is enabled
                   #randomEncryption = true;
+                };
+              };
+              testfscrypt = {
+                size = "20G";
+                content = {
+                  type = "filesystem";
+                  format = "ext4";
+                  mountpoint = "/testfscrypt";
                 };
               };
               zfs_1 = {

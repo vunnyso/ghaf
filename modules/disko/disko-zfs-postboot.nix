@@ -38,4 +38,32 @@ in
   # journalctl -u initrd-nixos-activation.service
   # inside the running Ghaf host.
   boot.postBootCommands = postBootCmds;
+
+  # Test fscrypt encryption functionality
+  systemd.services.testFscrypt = {
+    description = "Test fscrypt service";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "local-fs.target" ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      set +x
+      ${pkgs.coreutils}/bin/chown $(id -u):$(id -g) /testfscrypt
+      ${pkgs.fscrypt-experimental}/bin/fscrypt setup --force
+      ${pkgs.fscrypt-experimental}/bin/fscrypt setup --force /testfscrypt
+      ${pkgs.e2fsprogs}/bin/tune2fs -O encrypt "/dev/sda4"
+      mkdir /testfscrypt/data
+      echo -n "ghaf" | ${pkgs.fscrypt-experimental}/bin/fscrypt encrypt /testfscrypt/data/ --source=custom_passphrase
+      date > /testfscrypt/data/hello.txt
+      ls /testfscrypt/data
+      ${pkgs.fscrypt-experimental}/bin/fscrypt lock /testfscrypt/data/
+      ls /testfscrypt/data
+      echo -n "ghaf" | ${pkgs.fscrypt-experimental}/bin/fscrypt unlock /testfscrypt/data/
+      ${pkgs.fscrypt-experimental}/bin/fscrypt status
+
+      # Clean up
+      ${pkgs.fscrypt-experimental}/bin/fscrypt metadata destroy /testfscrypt --force
+      rm -rf /testfscrypt/data /.fscrypt /etc/fscrypt.conf
+      ${pkgs.fscrypt-experimental}/bin/fscrypt status
+    '';
+  };
 }
