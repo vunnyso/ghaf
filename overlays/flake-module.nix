@@ -10,13 +10,16 @@
   flake.overlays = {
     #cross-compilation = import ./cross-compilation;
     custom-packages = import ./custom-packages;
-
+    microvm = builtins.trace "--- Including microvm ---" import ./custom-packages/microvm {
+      inherit inputs;
+    };
     # This is a composition of all the overlays that are used in the project
     # and is used to export a simple default interface.
     default = inputs.nixpkgs.lib.composeManyExtensions [
       #internal overlays
       inputs.self.overlays.own-pkgs-overlay
       inputs.self.overlays.custom-packages
+      inputs.self.overlays.microvm
       #external overlays that we use
       inputs.ghafpkgs.overlays.default
       inputs.ctrl-panel.overlays.default
