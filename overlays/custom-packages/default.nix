@@ -12,4 +12,6 @@
   tpm2-pkcs11 = import ./tpm2-pkcs11 { inherit prev; };
   papirus-icon-theme = import ./papirus-icon-theme { inherit prev; };
   libfm = import ./libfm { inherit prev; };
+  microvm = import ./microvm { inherit prev; }; # Not working picking up the overlay file
+  #microvm.nix = import ./microvm { inherit prev; };   # This also did not worked either
 })

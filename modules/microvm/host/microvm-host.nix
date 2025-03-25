@@ -129,6 +129,16 @@ in
             ];
           };
 
+      # WORKAROUND: Create a script to change single quoutes to double quotes
+      # Currently getting following error
+      # ghaf-host microvm-pci-devices@net-vm[929]: sed: couldn't open temporary file /var/lib/microvms/net-vm/current/bin/sed4QB3wF: Read-only file system
+      systemd.services."microvm-pci-devices@net-vm".serviceConfig.ExecStartPre = ''
+        "+${pkgs.writeShellScript "fix-quotes" ''
+          FILE="/var/lib/microvms/net-vm/current/bin/pci-setup"
+          sed -i "s/'\$(\([^)]*\))' /\"\$(\1)\" /g" "$FILE"
+        ''}"
+      '';
+
       # Generate anonymous unique device identifier
       systemd.services.generate-device-id = {
         enable = true;
