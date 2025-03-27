@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 { inputs }:
 {
+  pkgs,
   config,
   lib,
   ...
@@ -12,6 +13,7 @@ let
     imports = [
       inputs.impermanence.nixosModules.impermanence
       inputs.self.nixosModules.givc
+      #inputs.self.overlays.microvm
       inputs.self.nixosModules.vm-modules
       inputs.self.nixosModules.profiles
       (
@@ -114,6 +116,11 @@ let
                 proto = "virtiofs";
               }
             ];
+
+            declaredRunner = pkgs.runCommand "patched" ''
+              mkdir $out
+              cp ${config.microvm.runner.${config.microvm.hypervisor}}/... $out/
+            '';
 
             writableStoreOverlay = lib.mkIf config.ghaf.development.debug.tools.enable "/nix/.rw-store";
             qemu = {
