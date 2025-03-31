@@ -70,7 +70,7 @@
   network.pciDevices = [
     {
       # Passthrough Intel WiFi card
-      path = "0000:00:14.3";
+      path = "";
       vendorId = "8086";
       productId = "51f1";
       name = "wlp0s5f0";
