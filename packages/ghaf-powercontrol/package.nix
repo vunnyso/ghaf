@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 {
   writeShellApplication,
+  pkgs,
   lib,
   systemd,
   wlopm,
@@ -83,7 +84,12 @@ writeShellApplication {
     }
 
     case "$1" in
-      reboot|poweroff)
+      reboot)
+        ${if useGivc then "givc-cli ${ghafConfig.givc.cliArgs}" else "systemctl"} "$1"
+        ;;
+      poweroff)
+        ${pkgs.grpcurl}/bin/grpcurl -cacert /run/givc/ca-cert.pem -cert /run/givc/cert.pem -key /run/givc/key.pem -d '{"UnitName":"poweroff.target"}' 192.168.100.4:9000 systemd.UnitControlService.StartUnit
+        sleep 2
         ${if useGivc then "givc-cli ${ghafConfig.givc.cliArgs}" else "systemctl"} "$1"
         ;;
       suspend)
