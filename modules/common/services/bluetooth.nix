@@ -20,7 +20,12 @@ in
     # Enable bluetooth
     hardware.bluetooth = {
       enable = true;
+      settings.General = {
+        Privacy = "device";
+      };
     };
+
+    hardware.xpadneo.enable = true; # Enable the xpadneo driver for Xbox One wireless controllers
 
     # Setup bluetooth user and group
     users = {
@@ -45,11 +50,16 @@ in
 
     # Uinput kernel module
     boot.kernelModules = [ "uinput" ];
+    boot.initrd.kernelModules = [
+      "uhid"
+      "hid-xpadneo"
+    ];
 
     # Rfkill udev rule
     services.udev.extraRules = ''
       KERNEL=="rfkill", SUBSYSTEM=="misc", GROUP="${bluetoothUser}"
       KERNEL=="uinput", SUBSYSTEM=="misc", GROUP="${bluetoothUser}"
+      KERNEL=="uhid", SUBSYSTEM=="misc", GROUP="${bluetoothUser}"
     '';
 
     # Dbus policy updates
