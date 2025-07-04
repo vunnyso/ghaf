@@ -24,7 +24,7 @@ in
     # Configure audiovm service
     givc.sysvm = {
       enable = true;
-      inherit (config.ghaf.givc) debug;
+      #inherit (config.ghaf.givc) debug;
       transport = {
         name = hostName;
         addr = hosts.${hostName}.ipv4;
@@ -43,6 +43,19 @@ in
           socket = "/tmp/dbusproxy_snd.sock";
         }
       ];
+      eventProxy = [
+        {
+          transport = {
+            name = "docker-vm";
+            addr = hosts."docker-vm".ipv4;
+            port = "9191";
+            protocol = "tcp";
+          };
+          producer = true;
+          device = "wireless controller";
+        }
+      ];
+      debug = true;
     };
     givc.dbusproxy = {
       enable = true;
