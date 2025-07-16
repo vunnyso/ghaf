@@ -22,5 +22,12 @@
     "file=${pkgs.OVMF.fd}/FV/OVMF_CODE.fd,if=pflash,unit=0,readonly=true"
     "-drive"
     "file=${pkgs.OVMF.fd}/FV/OVMF_VARS.fd,if=pflash,unit=1,readonly=true"
+    "-device"
+    "virtio-serial"
+    "-chardev"
+    #"socket,id=brightness,path=/tmp/brightness.sock" # Client mode
+    "socket,id=brightness,path=/tmp/brightness.sock,server=on,wait=off"
+    "-device"
+    "virtserialport,chardev=brightness,name=brightness"
   ];
 }

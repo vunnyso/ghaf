@@ -298,5 +298,61 @@ in
           };
         };
     })
+    (mkIf cfg.enable {
+      # systemd.sockets."control-brightness" = {
+      #   unitConfig.Description = "Socket for control-brightness";
+      #   socketConfig = {
+      #     ListenStream = "/tmp/brightness.sock";
+      #     Accept = false;
+      #     SocketMode = "0666";
+      #   };
+      #   wantedBy = [ "default.target" ];
+      # };
+
+      systemd.services."control-brightness" =
+        let
+          controlBrightnessScript = pkgs.writeShellApplication {
+            name = "control-brightness";
+            runtimeInputs = with pkgs; [
+              coreutils
+              brightnessctl
+              socat
+            ];
+            text = ''
+              SOCKET="/tmp/brightness.sock"
+
+              echo "Connecting to $SOCKET..."
+
+              # Retry until socket exists
+              while [ ! -S "$SOCKET" ]; do
+                echo "Waiting for QEMU socket to appear..."
+                sleep 1
+              done
+
+              # Connect and process messages
+              socat - UNIX-CONNECT:$SOCKET | while read -r value; do
+                echo "Received: $value"
+                if [[ "$value" =~ ^[0-9]+$ ]]; then
+                  echo "Setting brightness to $value%"
+                  brightnessctl -d nvidia_wmi_ec_backlight set "$value"
+                else
+                  echo "Invalid brightness: $value"
+                fi
+              done
+            '';
+          };
+        in
+        {
+          enable = true;
+          description = "Control display brightness using Nvidia driver";
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig = {
+            Type = "simple";
+            ExecStart = "${controlBrightnessScript}/bin/control-brightness";
+            Restart = "always";
+            RestartSec = "2";
+          };
+        };
+    })
   ];
 }
