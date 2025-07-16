@@ -97,6 +97,9 @@ let
     # Yubikey module
     yubikey = optionalAttrs cfg.guivm.yubikey { config.ghaf.services.yubikey.enable = true; };
 
+    # Brightness module
+    brightness = optionalAttrs cfg.guivm.brightness { config.ghaf.services.brightness.enable = true; };
+
     # Logging module
     logging = {
       config.ghaf.logging = {
@@ -165,6 +168,13 @@ in
         Enable Yubikey module configuration.
       '';
     };
+    guivm.brightness = mkOption {
+      type = types.bool;
+      default = cfg.guivm.enable;
+      description = ''
+        brightness module configuration.
+      '';
+    };
   };
 
   config = {
@@ -205,6 +215,7 @@ in
         serviceModules.graphics
         serviceModules.fprint
         serviceModules.yubikey
+        serviceModules.brightness
         serviceModules.givc
         serviceModules.logging
         referenceServiceModule
