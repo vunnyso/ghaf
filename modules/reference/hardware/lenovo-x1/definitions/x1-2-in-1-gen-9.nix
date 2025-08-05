@@ -117,12 +117,16 @@
   };
 
   # USB devices for passthrough
-  usb.devices = [
-    # Integrated camera
-    {
-      name = "cam0";
-      hostbus = "3";
-      hostport = "9";
-    }
-  ];
+  usb = {
+    internal = [
+      {
+        name = "cam0";
+        hostbus = "3";
+        hostport = "9";
+      }
+    ];
+    external = [
+      # Add external USB devices here
+    ];
+  };
 }

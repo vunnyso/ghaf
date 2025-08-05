@@ -157,12 +157,16 @@
   };
 
   # USB devices for passthrough
-  usb.devices = [
-    # Bluetooth controller
-    {
-      name = "bt0";
-      vendorId = "8087";
-      productId = "0033";
-    }
-  ];
+  usb = {
+    internal = [
+      {
+        name = "bt0";
+        vendorId = "8087";
+        productId = "0033";
+      }
+    ];
+    external = [
+      # Add external USB devices here
+    ];
+  };
 }
