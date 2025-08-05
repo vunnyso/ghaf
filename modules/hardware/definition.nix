@@ -62,13 +62,6 @@ in
               or extravagant characters.
             '';
           };
-          vmUdevExtraRule = mkOption {
-            type = types.nullOr types.str;
-            default = null;
-            description = ''
-              Extra udev rule for the VM to control access of the USB device.
-            '';
-          };
           vendorId = mkOption {
             type = types.nullOr types.str;
             default = null;
@@ -324,7 +317,7 @@ in
       };
 
       usb = {
-        devices = mkOption {
+        internal = mkOption {
           description = ''
             Internal USB device(s) to passthrough.
 
@@ -350,6 +343,25 @@ in
                 name = "fpr0";
                 hostbus = "3";
                 hostport = "3";
+              }
+            ]
+          '';
+        };
+        external = mkOption {
+          description = "External USB device(s) to passthrough. Requires name, vendorId, and productId.";
+          type = types.listOf usbDevSubmodule;
+          default = [ ];
+          example = literalExpression ''
+            [
+              {
+                name = "external-device-1";
+                vendorId = "0123";
+                productId = "0123";
+              }
+              {
+                name = "external-device-2";
+                vendorId = "0123";
+                productId = "0123";
               }
             ]
           '';

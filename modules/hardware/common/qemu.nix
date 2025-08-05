@@ -39,11 +39,17 @@ in
           "-device"
           "acad"
         ]
-        ++ optionals (hasAttr "gui-vm" config.ghaf.hardware.passthrough.qemuExtraArgs) config.ghaf.hardware.passthrough.qemuExtraArgs.gui-vm;
+        ++ optionals (hasAttr "yubikey" config.ghaf.hardware.usb.external.qemuExtraArgs) config.ghaf.hardware.usb.external.qemuExtraArgs.yubikey
+        ++ optionals (hasAttr "usbKBD" config.ghaf.hardware.usb.external.qemuExtraArgs) config.ghaf.hardware.usb.external.qemuExtraArgs.usbKBD
+        ++ optionals (hasAttr "fpr0" config.ghaf.hardware.usb.internal.qemuExtraArgs) config.ghaf.hardware.usb.internal.qemuExtraArgs.fpr0
+        ++ optionals config.ghaf.hardware.usb.vhotplug.enableEvdevPassthrough builtins.concatMap (n: [
+          "-device"
+          "pcie-root-port,bus=pcie.0,id=${config.ghaf.hardware.usb.vhotplug.pcieBusPrefix}${toString n},chassis=${toString n}"
+        ]) (lib.range 1 config.ghaf.hardware.usb.vhotplug.pciePortCount);
     };
     ghaf.qemu.audiovm = optionalAttrs (config.ghaf.type == "host") {
       microvm.qemu.extraArgs =
-        optionals (hasAttr "audio-vm" config.ghaf.hardware.passthrough.qemuExtraArgs) config.ghaf.hardware.passthrough.qemuExtraArgs.audio-vm
+        optionals (hasAttr "bt0" config.ghaf.hardware.usb.internal.qemuExtraArgs) config.ghaf.hardware.usb.internal.qemuExtraArgs.bt0
         ++ optionals (config.ghaf.hardware.definition.audio.acpiPath != null) [
           "-acpitable"
           "file=${config.ghaf.hardware.definition.audio.acpiPath}"
