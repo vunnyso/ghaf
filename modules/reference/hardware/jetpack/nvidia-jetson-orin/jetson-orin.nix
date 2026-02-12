@@ -3,6 +3,7 @@
 #
 # Configuration for NVIDIA Jetson Orin AGX/NX reference boards
 {
+  pkgs,
   lib,
   config,
   ...
@@ -15,6 +16,93 @@ let
     mkIf
     types
     ;
+  resizepartitionsScript = pkgs.writeShellApplication {
+    name = "resize-partitions-cmds";
+    runtimeInputs = with pkgs; [
+      gptfdisk
+      parted
+      cryptsetup
+      util-linux
+      e2fsprogs
+      coreutils
+      systemd
+    ];
+    text = ''
+      set -x
+      DISK="/dev/mmcblk0"
+      PART_NUM=1
+      PART_DEV="/dev/mmcblk0p1"
+
+      RESIZE_TARGET="$PART_DEV"
+      ${lib.optionalString cfg.diskEncryption.enable ''
+        MAPPER_NAME="${cfg.diskEncryption.mapperName}"
+        RESIZE_TARGET="/dev/mapper/$MAPPER_NAME"
+      ''}
+
+      # Wait for the device to be available
+      for _ in {1..30}; do
+        [ -b "$RESIZE_TARGET" ] && break
+        sleep 1
+      done
+
+      if [ ! -b "$RESIZE_TARGET" ]; then
+        echo "Target device $RESIZE_TARGET not found, skipping."
+        exit 0
+      fi
+
+      # Check for marker file by mounting temporarily
+      mkdir -p /mnt-resize
+      if mount "$RESIZE_TARGET" /mnt-resize; then
+        if [ -f /mnt-resize/var/lib/ghaf-resize-done ]; then
+          echo "Resize already performed, skipping."
+          umount /mnt-resize
+          exit 0
+        fi
+        umount /mnt-resize
+      fi
+
+      echo "Fixing GPT..."
+      sgdisk -e "$DISK" || true
+
+      echo "Resizing partition $PART_NUM to 100%..."
+      # Use resizepart which works on busy partitions by using the BLKPG_RESIZE_PARTITION ioctl
+      parted -s "$DISK" resizepart "$PART_NUM" 100%
+
+      # Re-read partition table and wait for udev
+      partprobe "$DISK" || true
+      udevadm settle || true
+
+      ${lib.optionalString cfg.diskEncryption.enable ''
+        echo "Resizing LUKS container $MAPPER_NAME..."
+        # Try resizing without passphrase first
+        if ! cryptsetup resize -v "$MAPPER_NAME"; then
+          echo "LUKS resize needs authentication..."
+          # Use systemd-ask-password to handle prompts in a non-interactive environment
+          PASSPHRASE=$(systemd-ask-password --timeout=60 "Enter passphrase for resizing LUKS container:")
+          if [ -n "$PASSPHRASE" ]; then
+            echo "$PASSPHRASE" | cryptsetup resize -v "$MAPPER_NAME" --key-file=-
+          else
+             echo "No passphrase entered, LUKS resize might have failed."
+          fi
+        fi
+        echo "LUKS status for $MAPPER_NAME after resize:"
+        cryptsetup status "$MAPPER_NAME"
+      ''}
+
+      echo "Resizing filesystem on $RESIZE_TARGET..."
+      # resize2fs may require a filesystem check before resizing
+      e2fsck -fy "$RESIZE_TARGET" || true
+      resize2fs "$RESIZE_TARGET"
+
+      # Create marker file
+      if mount "$RESIZE_TARGET" /mnt-resize; then
+        mkdir -p /mnt-resize/var/lib
+        touch /mnt-resize/var/lib/ghaf-resize-done
+        umount /mnt-resize
+      fi
+    '';
+  };
+
 in
 {
   options.ghaf.hardware.nvidia.orin = {
@@ -68,6 +156,14 @@ in
     hardware.nvidia-jetpack.kernel.version = "${cfg.kernelVersion}";
     nixpkgs.hostPlatform.system = "aarch64-linux";
 
+    environment.systemPackages = with pkgs; [
+      gptfdisk
+      parted
+      cryptsetup
+      util-linux
+      e2fsprogs
+    ];
+
     ghaf.hardware.aarch64.systemd-boot-dtb.enable = true;
 
     boot = {
@@ -113,10 +209,10 @@ in
 
     };
 
-    boot.initrd = mkIf cfg.diskEncryption.enable {
+    boot.initrd = {
       # Keep module selection aligned with the Orin JetPack baseline and avoid
       # requesting dm-crypt as a loadable module for upstream-6-6.
-      availableKernelModules = lib.mkForce [
+      availableKernelModules = [
         "xhci-tegra"
         "ucsi_ccg"
         "typec_ucsi"
@@ -130,24 +226,66 @@ in
         "pcie_tegra194"
         "nvpps"
         "nvethernet"
+      ]
+      ++ lib.optionals cfg.diskEncryption.enable [
+        "dm-crypt"
+        "dm-mod"
       ];
-      kernelModules = lib.mkForce [ ];
+      kernelModules = [ ];
       # algif_skcipher is not available with the upstream-6-6 kernel variant
       # used by current Orin reference targets.
-      luks.cryptoModules = lib.mkForce [
-        "aes"
-        "aes_generic"
-        "cbc"
-        "xts"
-        "sha1"
-        "sha256"
-        "sha512"
-        "af_alg"
-      ];
-      luks.devices.${cfg.diskEncryption.mapperName} = {
-        device = "/dev/mmcblk0p1";
-        allowDiscards = true;
+      luks.cryptoModules = lib.mkIf cfg.diskEncryption.enable (
+        lib.mkForce [
+          "aes"
+          "aes_generic"
+          "cbc"
+          "xts"
+          "sha1"
+          "sha256"
+          "sha512"
+          "af_alg"
+        ]
+      );
+      luks.devices = lib.mkIf cfg.diskEncryption.enable {
+        ${cfg.diskEncryption.mapperName} = {
+          device = "/dev/mmcblk0p1";
+          allowDiscards = true;
+        };
       };
+
+      systemd.storePaths = with pkgs; [
+        gptfdisk
+        parted
+        cryptsetup
+        util-linux
+        e2fsprogs
+        coreutils
+        systemd
+        resizepartitionsScript
+      ];
+
+      systemd.services.resize-partitions = {
+        description = "Resize partitions to fill the disk on first boot";
+        wantedBy = [ "initrd.target" ];
+        before = [
+          "sysroot.mount"
+          "initrd-root-fs.target"
+        ];
+        after = [ "cryptsetup.target" ];
+        unitConfig = {
+          DefaultDependencies = false;
+        };
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${resizepartitionsScript}/bin/resize-partitions-cmds";
+          StandardInput = "tty";
+          StandardOutput = "journal+console";
+          StandardError = "journal+console";
+        };
+      };
+
+      supportedFilesystems = [ "ext4" ];
     };
 
     fileSystems = mkIf cfg.diskEncryption.enable {
